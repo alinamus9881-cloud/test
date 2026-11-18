@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#dceef7">
+  <title>Калькулятор стоимости раков</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #102f45;
+      --muted: #5b7484;
+      --line: #d5e5ed;
+      --green: #087eae;
+      --green-dark: #075f85;
+      --cream: #eaf5f9;
+      --white: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 16px;
+      color: var(--ink);
+      background:
+        linear-gradient(145deg, rgba(235, 248, 252, .86), rgba(214, 236, 246, .9)),
+        url("https://images.unsplash.com/photo-1625944525533-473f1a3d54e7?auto=format&fit=crop&w=1800&q=85") center / cover fixed,
+        var(--cream);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page { width: min(100%, 520px); margin: 0 auto; }
+    .eyebrow { margin: 0 0 8px; color: var(--green); font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 8vw, 44px); font-weight: 500; letter-spacing: -.04em; line-height: 1.06; }
+    .intro { margin: 12px 0 24px; color: var(--muted); font-size: 15px; line-height: 1.55; }
+
+    .card {
+      padding: 24px;
+      border: 1px solid rgba(29, 43, 37, .07);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 16px 45px rgba(24, 74, 101, .14);
+    }
+
+    .field + .field { margin-top: 22px; }
+    .menu-block { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .menu-title { margin: 0 0 5px; font-family: Georgia, "Times New Roman", serif; font-size: 22px; font-weight: 500; letter-spacing: -.02em; }
+    .menu-intro { margin: 0 0 15px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .menu-items { display: grid; gap: 12px; }
+    .menu-item { display: grid; grid-template-columns: minmax(0, 1fr) 112px; align-items: center; gap: 12px; }
+    .menu-name { font-size: 14px; font-weight: 600; }
+    .menu-price { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 400; }
+    .menu-input-wrap input[type="number"] { min-height: 48px; padding: 10px 38px 10px 11px; font-size: 15px; }
+    .menu-input-wrap .suffix { right: 12px; font-size: 13px; }
+    .field-label { display: block; margin-bottom: 10px; font-size: 14px; font-weight: 700; }
+    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .option { position: relative; }
+    .option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .option label {
+      display: flex;
+      min-height: 52px;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      color: #536158;
+      cursor: pointer;
+      font-size: 14px;
+      transition: border-color .15s, background .15s, color .15s;
+    }
+    .option label::before { width: 16px; height: 16px; flex: 0 0 16px; border: 1.5px solid #b9c4bb; border-radius: 50%; content: ""; }
+    .option input:checked + label { border-color: var(--green); background: #edf8fc; color: var(--green-dark); }
+    .option input:checked + label::before { border: 5px solid var(--green); }
+    .option input:focus-visible + label { outline: 3px solid rgba(40, 117, 83, .23); outline-offset: 2px; }
+
+    .input-wrap { position: relative; }
+    input[type="number"] {
+      width: 100%;
+      min-height: 54px;
+      padding: 13px 48px 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      outline: none;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      font-size: 17px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type="number"]:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(40, 117, 83, .12); }
+    .suffix { position: absolute; top: 50%; right: 16px; color: var(--muted); font-size: 14px; transform: translateY(-50%); pointer-events: none; }
+    .hint { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .summary { margin-top: 24px; padding: 18px; border-radius: 16px; background: #f5f7f2; }
+    .summary-title { margin: 0 0 12px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; color: #506057; font-size: 14px; }
+    .row strong { color: var(--ink); font-weight: 650; text-align: right; }
+    .row.total { align-items: baseline; margin-top: 7px; padding-top: 14px; border-top: 1px solid #dfe6dc; color: var(--ink); font-size: 15px; font-weight: 700; }
+    .row.total strong { color: var(--green-dark); font-size: 27px; letter-spacing: -.04em; white-space: nowrap; }
+    .notice { display: none; margin: 12px 0 0; color: #9a541b; font-size: 13px; line-height: 1.45; }
+    .notice.visible { display: block; }
+
+    button {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      transition: background .15s, transform .15s;
+    }
+    button:hover { background: var(--green-dark); }
+    button:active { transform: translateY(1px); }
+    button:focus-visible { outline: 3px solid rgba(40, 117, 83, .3); outline-offset: 3px; }
+    .footer { margin: 15px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; text-align: center; }
+
+    @media (max-width: 420px) {
+      body { padding: 22px 13px; }
+      .card { padding: 19px 16px; border-radius: 19px; }
+      .option label { padding: 10px; font-size: 13px; }
+      .row { font-size: 13px; }
+      .row.total strong { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Свежий улов</p>
+    <h1>Раки к вашему столу</h1>
+    <p class="intro">Выберите раков, укажите количество и при желании добавьте морепродукты. Итог обновится сразу.</p>
+
+    <section class="card" aria-label="Расчёт стоимости заказа">
+      <div class="field">
+        <span class="field-label" id="type-label">Какие раки вам нужны?</span>
+        <div class="options" role="radiogroup" aria-labelledby="type-label">
+          <div class="option">
+            <input type="radio" id="boiled" name="type" value="boiled" checked>
+            <label for="boiled">Варёные</label>
+          </div>
+          <div class="option">
+            <input type="radio" id="fresh" name="type" value="fresh">
+            <label for="fresh">Живые</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="weight">Сколько раков?</label>
+        <div class="input-wrap">
+          <input id="weight" type="number" inputmode="numeric" min="1" step="1" value="1" placeholder="Например, 5" aria-describedby="weight-hint">
+          <span class="suffix">шт</span>
+        </div>
+        <p class="hint" id="weight-hint"></p>
+      </div>
+
+      <div class="field">
+        <span class="field-label" id="delivery-label">Нужна доставка?</span>
+        <div class="options" role="radiogroup" aria-labelledby="delivery-label">
+          <div class="option">
+            <input type="radio" id="delivery-yes" name="delivery" value="yes">
+            <label for="delivery-yes">Да, с доставкой</label>
+          </div>
+          <div class="option">
+            <input type="radio" id="delivery-no" name="delivery" value="no" checked>
+            <label for="delivery-no">Заберу сам</label>
+          </div>
+        </div>
+      </div>
+
+      <section class="menu-block" aria-labelledby="menu-title">
+        <h2 class="menu-title" id="menu-title">Также в нашем меню</h2>
+        <p class="menu-intro">Добавьте к заказу морепродукты — их стоимость войдёт в общий расчёт.</p>
+        <div class="menu-items">
+          <label class="menu-item" for="shrimp-quantity">
+            <span class="menu-name">Креветки<span class="menu-price" id="shrimp-price-label"></span></span>
+            <span class="input-wrap menu-input-wrap"><input id="shrimp-quantity" type="number" inputmode="decimal" min="0" step="0.1" value="0" aria-label="Количество креветок в килограммах"><span class="suffix">кг</span></span>
+          </label>
+          <label class="menu-item" for="mussels-quantity">
+            <span class="menu-name">Мидии<span class="menu-price" id="mussels-price-label"></span></span>
+            <span class="input-wrap menu-input-wrap"><input id="mussels-quantity" type="number" inputmode="decimal" min="0" step="0.1" value="0" aria-label="Количество мидий в килограммах"><span class="suffix">кг</span></span>
+          </label>
+          <label class="menu-item" for="oysters-quantity">
+            <span class="menu-name">Устрицы<span class="menu-price" id="oysters-price-label"></span></span>
+            <span class="input-wrap menu-input-wrap"><input id="oysters-quantity" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="Количество устриц в штуках"><span class="suffix">шт</span></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="summary" aria-live="polite" aria-atomic="true">
+        <p class="summary-title">Ваш расчёт</p>
+        <div class="row"><span id="product-label">Варёные раки</span><strong id="product-cost">—</strong></div>
+        <div id="menu-summary-rows"></div>
+        <div class="row" id="delivery-row" hidden><span>Доставка</span><strong id="delivery-cost">—</strong></div>
+        <div class="row total"><span>Итого</span><strong id="total">—</strong></div>
+        <p class="notice" id="notice" role="status"></p>
+      </div>
+
+      <button type="button" id="copy-button">Скопировать расчёт</button>
+      <p class="footer" id="copy-status">Скопируйте расчёт и отправьте его в мессенджере.</p>
+    </section>
+  </main>
+
+  <script>
+    // ЦЕНЫ И УСЛОВИЯ — поменяйте значения в этом блоке.
+    const PRICES = {
+      boiledEach: 1600,  // Варёные раки, ₽/шт
+      freshEach: 1300,   // Живые раки, ₽/шт
+      minOrder: 1,       // Минимальный заказ раков, шт
+      delivery: 400,     // Стоимость доставки, ₽
+      shrimpPerKg: 800,  // Креветки, ₽/кг
+      musselsPerKg: 900, // Мидии, ₽/кг
+      oystersEach: 300   // Устрицы, ₽/шт
+    };
+
+    const money = new Intl.NumberFormat('ru-RU', {
+      style: 'currency', currency: 'RUB', maximumFractionDigits: 0
+    });
+    const weightInput = document.getElementById('weight');
+    const weightHint = document.getElementById('weight-hint');
+    const productLabel = document.getElementById('product-label');
+    const productCost = document.getElementById('product-cost');
+    const deliveryRow = document.getElementById('delivery-row');
+    const deliveryCost = document.getElementById('delivery-cost');
+    const total = document.getElementById('total');
+    const notice = document.getElementById('notice');
+    const copyButton = document.getElementById('copy-button');
+    const copyStatus = document.getElementById('copy-status');
+    const menuSummaryRows = document.getElementById('menu-summary-rows');
+    const menuProducts = [
+      { id: 'shrimp', name: 'Креветки', price: PRICES.shrimpPerKg, unit: 'кг', priceUnit: 'кг', fractionDigits: 2 },
+      { id: 'mussels', name: 'Мидии', price: PRICES.musselsPerKg, unit: 'кг', priceUnit: 'кг', fractionDigits: 2 },
+      { id: 'oysters', name: 'Устрицы', price: PRICES.oystersEach, unit: 'шт', priceUnit: 'шт', fractionDigits: 0 }
+    ];
+
+    let currentCalculation = null;
+
+    function calculate() {
+      const type = document.querySelector('input[name="type"]:checked').value;
+      const wantsDelivery = document.querySelector('input[name="delivery"]:checked').value === 'yes';
+      const weight = Number(weightInput.value);
+      const validWeight = Number.isFinite(weight) && weight > 0;
+      const priceEach = type === 'boiled' ? PRICES.boiledEach : PRICES.freshEach;
+      const typeName = type === 'boiled' ? 'Варёные раки' : 'Живые раки';
+      const base = validWeight ? Math.round(priceEach * weight) : 0;
+      const additions = menuProducts.map(product => {
+        const quantity = Number(document.getElementById(`${product.id}-quantity`).value);
+        const validQuantity = Number.isFinite(quantity) && quantity > 0;
+        return { ...product, quantity: validQuantity ? quantity : 0, cost: validQuantity ? Math.round(product.price * quantity) : 0 };
+      });
+      const additionsTotal = additions.reduce((sum, product) => sum + product.cost, 0);
+      menuSummaryRows.replaceChildren(...additions.filter(product => product.quantity > 0).map(product => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const label = document.createElement('span');
+        label.textContent = `${product.name} · ${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: product.fractionDigits }).format(product.quantity)} ${product.unit}`;
+        const amount = document.createElement('strong');
+        amount.textContent = money.format(product.cost);
+        row.append(label, amount);
+        return row;
+      }));
+      const shipping = wantsDelivery ? PRICES.delivery : 0;
+      const belowMinimum = validWeight && weight < PRICES.minOrder;
+
+      productLabel.textContent = validWeight
+        ? `${typeName} · ${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(weight)} шт × ${money.format(priceEach)}/шт`
+        : typeName;
+      productCost.textContent = validWeight ? money.format(base) : '—';
+      deliveryRow.hidden = !wantsDelivery;
+      deliveryCost.textContent = money.format(shipping);
+      total.textContent = validWeight ? money.format(base + additionsTotal + shipping) : '—';
+      weightHint.textContent = `Цена: ${money.format(priceEach)} за штуку. Минимальный заказ — ${PRICES.minOrder} шт.`;
+      menuProducts.forEach(product => {
+        const formattedPrice = money.format(product.price);
+        document.getElementById(`${product.id}-price-label`).textContent = `${formattedPrice} / ${product.priceUnit}`;
+      });
+      notice.textContent = belowMinimum
+        ? `Минимальный заказ — ${PRICES.minOrder} шт. Укажите нужное количество раков.`
+        : '';
+      notice.classList.toggle('visible', belowMinimum);
+
+      const menuLines = additions.filter(product => product.quantity > 0).map(product =>
+        `${product.name}: ${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: product.fractionDigits }).format(product.quantity)} ${product.unit} × ${money.format(product.price)}/${product.priceUnit} = ${money.format(product.cost)}`
+      );
+      currentCalculation = validWeight
+        ? `${typeName}: ${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(weight)} шт × ${money.format(priceEach)}/шт = ${money.format(base)}${menuLines.length ? `\n${menuLines.join('\n')}` : ''}${wantsDelivery ? `\nДоставка: ${money.format(shipping)}` : ''}\nИтого: ${money.format(base + additionsTotal + shipping)}${belowMinimum ? `\nМинимальный заказ: ${PRICES.minOrder} шт` : ''}`
+        : null;
+    }
+
+    document.querySelectorAll('input[name="type"], input[name="delivery"]').forEach(input => {
+      input.addEventListener('change', calculate);
+    });
+    weightInput.addEventListener('input', calculate);
+    menuProducts.forEach(product => {
+      document.getElementById(`${product.id}-quantity`).addEventListener('input', calculate);
+    });
+
+    copyButton.addEventListener('click', async () => {
+      if (!currentCalculation) {
+        copyStatus.textContent = 'Сначала укажите вес заказа.';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(currentCalculation);
+        copyStatus.textContent = 'Расчёт скопирован — можно отправить его в мессенджере.';
+      } catch {
+        const helper = document.createElement('textarea');
+        helper.value = currentCalculation;
+        helper.style.position = 'fixed';
+        helper.style.opacity = '0';
+        document.body.append(helper);
+        helper.select();
+        const copied = document.execCommand('copy');
+        helper.remove();
+        copyStatus.textContent = copied
+          ? 'Расчёт скопирован — можно отправить его в мессенджере.'
+          : 'Не удалось скопировать автоматически. Выделите и скопируйте расчёт вручную.';
+      }
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
+
